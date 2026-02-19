@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Project 1 — Team 27 | Apache Roller</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', sans-serif; background: #0a0a0f; color: #e0e0e0; overflow: hidden; height: 100vh; width: 100vw; }
+  .slide { display: none; width: 100vw; height: 100vh; padding: 44px 60px; position: absolute; top: 0; left: 0; animation: fadeIn 0.35s ease; }
+  .slide.active { display: flex; flex-direction: column; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* Title slide */
+  .title-slide { justify-content: center; align-items: center; text-align: center; background: linear-gradient(135deg, #0a0a2e 0%, #141435 50%, #0a0a0f 100%); }
+  .title-slide h1 { font-size: 2.8em; font-weight: 800; color: #fff; margin-bottom: 8px; letter-spacing: -1.5px; line-height: 1.15; }
+  .title-slide .accent { background: linear-gradient(90deg, #4facfe, #00f2fe); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .title-slide .subtitle { font-size: 1.3em; color: #8899bb; font-weight: 400; margin-bottom: 28px; }
+  .title-slide .meta { font-size: 0.92em; color: #556; line-height: 2; }
+  .title-slide .meta strong { color: #8899bb; }
+
+  /* Content slides */
+  .content-slide { background: #0a0a0f; }
+  .slide-header { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; padding-bottom: 10px; border-bottom: 1px solid #1a1a2a; flex-shrink: 0; }
+  .slide-tag { background: linear-gradient(135deg, #1e3a5f, #1a2a4a); color: #4facfe; padding: 4px 14px; border-radius: 20px; font-size: 0.72em; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; white-space: nowrap; }
+  .slide-header h2 { font-size: 1.5em; font-weight: 700; color: #fff; letter-spacing: -0.5px; }
+  .slide-body { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 10px; overflow: hidden; }
+  .slide-body.two-col { flex-direction: row; gap: 24px; }
+  .col { flex: 1; display: flex; flex-direction: column; gap: 8px; justify-content: center; }
+
+  .card { background: #12121a; border: 1px solid #1e1e2e; border-radius: 10px; padding: 14px 16px; }
+  .card:hover { border-color: #2a3a5a; }
+  .card h3 { font-size: 0.88em; color: #4facfe; font-weight: 600; margin-bottom: 5px; }
+  .card p, .card li { font-size: 0.78em; color: #99a; line-height: 1.5; }
+  .card ul { padding-left: 16px; }
+  .card li { margin-bottom: 2px; }
+  .card li strong { color: #ccd; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+
+  .mini-card { background: #111118; border: 1px solid #1a1a28; border-radius: 8px; padding: 10px 12px; }
+  .mini-card h4 { font-size: 0.76em; color: #4facfe; font-weight: 600; margin-bottom: 3px; }
+  .mini-card p { font-size: 0.7em; color: #889; line-height: 1.4; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 0.76em; }
+  th { background: #111120; color: #4facfe; padding: 8px 10px; text-align: left; font-weight: 600; border-bottom: 2px solid #1e1e3a; font-size: 0.82em; }
+  td { padding: 6px 10px; color: #99a; border-bottom: 1px solid #151520; }
+  tr:hover td { background: #13131e; }
+  td strong { color: #ccd; }
+
+  .highlight-box { background: linear-gradient(135deg, #121230, #0f1020); border: 1px solid #1e2a4a; border-radius: 8px; padding: 12px 16px; }
+  .highlight-box p { font-size: 0.78em; color: #99a; line-height: 1.5; }
+  .highlight-box strong { color: #4facfe; }
+
+  canvas { max-height: 100%; }
+
+  .pill { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 0.65em; font-weight: 600; }
+  .pill.green { background: #1a3a2a; color: #4ecdc4; }
+  .pill.red { background: #3a1a1a; color: #ff6b6b; }
+  .pill.blue { background: #1a2a3a; color: #4facfe; }
+  .pill.yellow { background: #2a2a1a; color: #ffd93d; }
+
+  .pipeline { display: flex; align-items: center; gap: 4px; justify-content: center; flex-wrap: wrap; }
+  .pipe-step { background: #12121a; border: 1px solid #1e1e2e; padding: 8px 14px; border-radius: 8px; text-align: center; min-width: 100px; }
+  .pipe-step .icon { font-size: 1.3em; margin-bottom: 2px; }
+  .pipe-step .label { font-size: 0.7em; color: #4facfe; font-weight: 600; }
+  .pipe-step .desc { font-size: 0.58em; color: #667; margin-top: 1px; }
+  .pipe-arrow { color: #333; font-size: 1em; }
+
+  .bar-compare { display: flex; align-items: center; gap: 6px; margin-bottom: 5px; }
+  .bar-label { width: 80px; font-size: 0.7em; color: #99a; text-align: right; flex-shrink: 0; }
+  .bar-track { flex: 1; height: 18px; background: #151520; border-radius: 4px; position: relative; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 4px; display: flex; align-items: center; padding-left: 6px; font-size: 0.62em; font-weight: 600; color: #fff; }
+  .bar-fill.before { background: linear-gradient(90deg, #ff6b6b, #ee5a5a); }
+  .bar-fill.after { background: linear-gradient(90deg, #4ecdc4, #44b8b0); }
+
+  .stat-row { display: flex; gap: 8px; }
+  .stat-box { flex: 1; background: #111118; border: 1px solid #1a1a28; border-radius: 8px; padding: 10px; text-align: center; }
+  .stat-box .val { font-size: 1.4em; font-weight: 800; color: #4ecdc4; }
+  .stat-box .lbl { font-size: 0.65em; color: #667; margin-top: 2px; }
+
+  .nav { position: fixed; bottom: 18px; right: 22px; display: flex; gap: 8px; z-index: 100; }
+  .nav button { background: #12121a; border: 1px solid #1e1e2e; color: #4facfe; padding: 8px 18px; border-radius: 8px; cursor: pointer; font-size: 0.78em; font-family: inherit; font-weight: 600; transition: all 0.2s; }
+  .nav button:hover { background: #1a1a2e; border-color: #3a4a6a; }
+  .nav button:disabled { opacity: 0.25; cursor: default; }
+  .slide-counter { position: fixed; bottom: 22px; left: 22px; color: #333; font-size: 0.72em; font-weight: 600; z-index: 100; }
+  .progress-bar { position: fixed; top: 0; left: 0; height: 3px; background: linear-gradient(90deg, #4facfe, #00f2fe); z-index: 200; transition: width 0.3s ease; }
+</style>
+</head>
+<body>
+
+<div class="progress-bar" id="progressBar" style="width: 8.33%"></div>
+
+<!-- ========== SLIDE 1: TITLE ========== -->
+<div class="slide title-slide active" id="slide-1">
+  <h1>Reverse Engineering &<br><span class="accent">Refactoring Apache Roller</span></h1>
+  <div class="subtitle">Project 1 &mdash; Team 27</div>
+  <div class="meta">
+    <strong>CS6.401 Software Engineering</strong> &middot; Spring 2026<br><br>
+    Akshat &middot; Om &middot; Hardik &middot; Parv &middot; Gaurav
+  </div>
+</div>
+
+<!-- ========== SLIDE 2: TEAM & PROCESS ========== -->
+<div class="slide content-slide" id="slide-2">
+  <div class="slide-header">
+    <span class="slide-tag">Team</span>
+    <h2>Team Dynamics & Process</h2>
+  </div>
+  <div class="slide-body two-col">
+    <div class="col">
+      <div class="card">
+        <h3>Team Roles</h3>
+        <table>
+          <tr><td style="width:80px;"><strong>Akshat</strong></td><td>Design smells (2A), Metrics (2B), Manual refactoring (3A), Post-metrics (3B)</td></tr>
+          <tr><td><strong>Om</strong></td><td>UML diagrams (1), Smells (2A), Docs (3A/3B), Comparative (5)</td></tr>
+          <tr><td><strong>Hardik</strong></td><td>Manual vs LLM analysis (1), Comparative analysis (5)</td></tr>
+          <tr><td><strong>Parv</strong></td><td>Task 1 docs, Smells (2A), Refactoring (3A), Agentic (4)</td></tr>
+          <tr><td><strong>Gaurav</strong></td><td>UML (1), LLM pipeline (3C), Refactoring contributions (3A/3B)</td></tr>
+        </table>
+      </div>
+      <div class="card">
+        <h3>Target System: Apache Roller</h3>
+        <ul>
+          <li>Mature Java multi-user blog platform (Oracle, IBM)</li>
+          <li>Maven build, Guice DI, Lucene search, JPA persistence</li>
+          <li>550+ classes across deep package hierarchy</li>
+        </ul>
+      </div>
+    </div>
+    <div class="col">
+      <div class="card">
+        <h3>4-Phase Process</h3>
+        <ul>
+          <li><strong>Phase 1 — Explore:</strong> Code reading → Package mapping → 3 subsystems scoped</li>
+          <li><strong>Phase 2 — Analyze:</strong> UML modeling → SonarQube + Designite → 7 smells, 6 metrics</li>
+          <li><strong>Phase 3 — Refactor:</strong> Manual fixes → Build verification → Before/after metrics run</li>
+          <li><strong>Phase 4 — Compare:</strong> LLM pipeline → Agentic → 5-dimension comparative study</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>3 Subsystems Analyzed</h3>
+        <ul>
+          <li><strong>Weblog &amp; Content:</strong> Weblog, WeblogEntry, Theme/Template hierarchy</li>
+          <li><strong>User &amp; Role Mgmt:</strong> User, UserRole, RollerPermission, RollerSession</li>
+          <li><strong>Search &amp; Indexing:</strong> IndexManager, LuceneIndexManager, IndexOperation</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== SLIDE 3: ARCHITECTURE (TASK 1) ========== -->
+<div class="slide content-slide" id="slide-3">
+  <div class="slide-header">
+    <span class="slide-tag">Task 1</span>
+    <h2>Architectural Mapping &amp; Design Recovery</h2>
+  </div>
+  <div class="slide-body two-col">
+    <div class="col">
+      <div class="card">
+        <h3>What We Did</h3>
+        <ul>
+          <li>3 subsystem-level <strong>class diagrams</strong> in PlantUML</li>
+          <li>Package-grouped, color-coded: inheritance, composition, association, dependency</li>
+          <li>Cross-validated every relationship against source code</li>
+          <li>Documented key design patterns: Manager/POJO, Guice DI, ReadWriteLock, Wrapper</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Key Architectural Observations</h3>
+        <ul>
+          <li><span class="pill green">Strength</span> Clean manager/POJO separation, Guice DI</li>
+          <li><span class="pill green">Strength</span> Background thread indexing with ReadWriteLock</li>
+          <li><span class="pill green">Strength</span> One-way persistence layer dependency</li>
+          <li><span class="pill red">Weakness</span> Hub-like domain objects (Weblog fan-out 27)</li>
+          <li><span class="pill red">Weakness</span> Cyclic dependencies across layers</li>
+          <li><span class="pill red">Weakness</span> UserManager: 30+ methods, no audit logging</li>
+        </ul>
+      </div>
+    </div>
+    <div class="col">
+      <div class="card" style="border-color: #2a3a2a;">
+        <h3 style="color: #4ecdc4;">Manual vs LLM Architecture Analysis</h3>
+        <table>
+          <tr><th></th><th>Manual</th><th>LLM (Claude 3.5)</th></tr>
+          <tr><td><strong>Time</strong></td><td>~8 hours</td><td>~30 minutes</td></tr>
+          <tr><td><strong>Depth</strong></td><td>Found edge cases, subtle cycles, implementation quirks</td><td>Quick high-level structure, known pattern templates</td></tr>
+          <tr><td><strong>Best at</strong></td><td>Deep understanding &amp; validation</td><td>Discovery &amp; initial mapping</td></tr>
+        </table>
+        <p style="margin-top: 8px;"><strong>Verdict:</strong> LLM accelerates discovery; manual is essential for accuracy &amp; detailed validation.</p>
+      </div>
+      <div class="card" style="text-align: center; padding: 12px;">
+        <h3>Subsystem Size (LOC analyzed)</h3>
+        <div style="height: 170px;"><canvas id="subsystemChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== SLIDE 4: DESIGN SMELLS (TASK 2A) ========== -->
+<div class="slide content-slide" id="slide-4">
+  <div class="slide-header">
+    <span class="slide-tag">Task 2A</span>
+    <h2>Design Smells Identified (7 Smells)</h2>
+  </div>
+  <div class="slide-body two-col">
+    <div class="col" style="flex: 1.2;">
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 7px;">
+        <div class="mini-card" style="border-left: 3px solid #ff6b6b;">
+          <h4>1. Cyclic Dependencies</h4>
+          <p>User ↔ Weblog ↔ Permission ↔ UI — multi-package cycles breaking layered arch</p>
+        </div>
+        <div class="mini-card" style="border-left: 3px solid #ff6b6b;">
+          <h4>2. Hub-Like Modularization</h4>
+          <p>Weblog: fan-out=27, WMC=149, mixes data + config + business logic</p>
+        </div>
+        <div class="mini-card" style="border-left: 3px solid #ffd93d;">
+          <h4>3. Mixed Concerns (URLStrategy)</h4>
+          <p>20+ methods: auth, search, media, feeds in one interface. Fan-in=35</p>
+        </div>
+        <div class="mini-card" style="border-left: 3px solid #ffd93d;">
+          <h4>4. Duplicated Responsibilities</h4>
+          <p>Pagination in SearchResultList, SearchResultMap, Model, Pager</p>
+        </div>
+        <div class="mini-card" style="border-left: 3px solid #ffd93d;">
+          <h4>5. Broken Hierarchy</h4>
+          <p>Theme/Template mixes layout + content ownership + permissions</p>
+        </div>
+        <div class="mini-card" style="border-left: 3px solid #4facfe;">
+          <h4>6. Imperative Abstraction</h4>
+          <p>RollerUserDetailsService: 1 method, 70 LOC, CC=11, mixes auth types</p>
+        </div>
+      </div>
+      <div class="mini-card" style="border-left: 3px solid #4facfe;">
+        <h4>7. Unnecessary Abstraction</h4>
+        <p>SingletonHolder: inner class with zero methods, one static field — holder pattern adds no value</p>
+      </div>
+    </div>
+    <div class="col" style="flex: 0.8;">
+      <div class="card" style="text-align: center; padding: 12px;">
+        <h3>Smells by Severity</h3>
+        <div style="height: 190px;"><canvas id="smellSeverityChart"></canvas></div>
+      </div>
+      <div class="card">
+        <h3>Detection Tools</h3>
+        <ul>
+          <li><span class="pill blue">SonarQube</span> Complexity, coupling, cycles</li>
+          <li><span class="pill blue">Designite Java</span> Design smell detection</li>
+          <li><span class="pill blue">CK Metrics</span> CBO, WMC, DIT, LCOM</li>
+          <li><span class="pill blue">Checkstyle</span> Method length, fan-out</li>
+        </ul>
+        <p style="margin-top: 6px;">Every tool finding cross-checked against manual UML analysis.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== SLIDE 5: CODE METRICS (TASK 2B) ========== -->
+<div class="slide content-slide" id="slide-5">
+  <div class="slide-header">
+    <span class="slide-tag">Task 2B</span>
+    <h2>Code Metrics — Baseline Analysis</h2>
+  </div>
+  <div class="slide-body two-col">
+    <div class="col">
+      <div class="card" style="text-align:center; padding: 10px;">
+        <h3>Cyclomatic Complexity Hotspots (CC)</h3>
+        <div style="height: 175px;"><canvas id="ccChart"></canvas></div>
+      </div>
+      <div class="card" style="text-align:center; padding: 10px;">
+        <h3>Fan-Out Complexity (Top 6)</h3>
+        <div style="height: 160px;"><canvas id="fanoutChart"></canvas></div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="card" style="text-align:center; padding: 10px;">
+        <h3>WMC — Weighted Methods per Class</h3>
+        <div style="height: 175px;"><canvas id="wmcChart"></canvas></div>
+      </div>
+      <div class="card">
+        <h3>6 Metrics — Key Violations</h3>
+        <table>
+          <tr><th>Metric</th><th>Worst Violator</th><th>Value / Threshold</th></tr>
+          <tr><td><strong>CC</strong></td><td>PageServlet.doGet</td><td>83 / 10</td></tr>
+          <tr><td><strong>Method LOC</strong></td><td>DatabaseInstaller</td><td>438 / 150</td></tr>
+          <tr><td><strong>Fan-Out</strong></td><td>LuceneIndexManager</td><td>40 / 25</td></tr>
+          <tr><td><strong>WMC</strong></td><td>JPAMediaFileManagerImpl</td><td>88 / 50</td></tr>
+          <tr><td><strong>DIT</strong></td><td>PreviewURLStrategy</td><td>3 / 3</td></tr>
+          <tr><td><strong>LCOM</strong></td><td>SubscriptionEntry</td><td>0.425</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== SLIDE 6: REFACTORING (TASK 3A) ========== -->
+<div class="slide content-slide" id="slide-6">
+  <div class="slide-header">
+    <span class="slide-tag">Task 3A</span>
+    <h2>Manual Refactoring — All 7 Smells Resolved</h2>
+  </div>
+  <div class="slide-body">
+    <table style="font-size: 0.74em; margin-bottom: 8px;">
+      <thead>
+        <tr><th style="width:150px;">Smell</th><th>Refactoring Applied</th><th style="width:90px;">SOLID</th><th style="width:150px;">Impact</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>1. Cyclic Deps</strong></td><td>Extracted AuthorizationService (interface + impl)</td><td>SRP, DIP</td><td>11 files (2 new, 9 mod)</td></tr>
+        <tr><td><strong>2. Weblog Hub</strong></td><td>Extracted WeblogService + WeblogConfig value object</td><td>SRP, OCP</td><td>4 files (3 new, 1 mod)</td></tr>
+        <tr><td><strong>3. URLStrategy</strong></td><td>Segregated → 5 interfaces (Auth, Weblog, Search, Media, Feed)</td><td>ISP, SRP</td><td>7 files (5 new, 2 mod)</td></tr>
+        <tr><td><strong>4. Search Dup</strong></td><td>PaginationInfo VO, deleted SearchResultMap</td><td>DRY, SRP</td><td>4 files (1 new, 1 deleted)</td></tr>
+        <tr><td><strong>5. Broken Hierarchy</strong></td><td>Composition over inheritance, ContentTemplate interface</td><td>LSP, OCP</td><td>4+ files modified</td></tr>
+        <tr><td><strong>6. Imperative Abs</strong></td><td>Strategy pattern: Standard + OpenID loaders</td><td>OCP, SRP</td><td>2 files (1 new, 1 mod)</td></tr>
+        <tr><td><strong>7. Unnecessary Abs</strong></td><td>Removed SingletonHolder → direct static init</td><td>YAGNI</td><td>1 file modified</td></tr>
+      </tbody>
+    </table>
+    <div class="stat-row" style="margin-bottom: 8px;">
+      <div class="stat-box"><div class="val">7/7</div><div class="lbl">Smells Resolved</div></div>
+      <div class="stat-box"><div class="val" style="color:#4facfe;">11</div><div class="lbl">New Files</div></div>
+      <div class="stat-box"><div class="val" style="color:#4facfe;">+647</div><div class="lbl">LOC Added</div></div>
+      <div class="stat-box"><div class="val" style="color:#ff6b6b;">-236</div><div class="lbl">LOC Removed</div></div>
+      <div class="stat-box"><div class="val" style="color:#4ecdc4;">BUILD &#10003;</div><div class="lbl">mvn install passed</div></div>
+    </div>
+    <div class="highlight-box">
+      <p><strong>Workflow:</strong> GitHub Issue → Analysis → Class-level refactoring → Backward compatibility via delegation → mvn compile &amp; test → Commit with traceability</p>
+    </div>
+  </div>
+</div>
+
+<!-- ========== SLIDE 7: BEFORE/AFTER METRICS (TASK 3B) ========== -->
+<div class="slide content-slide" id="slide-7">
+  <div class="slide-header">
+    <span class="slide-tag">Task 3B</span>
+    <h2>Before vs After — Metrics Improvement</h2>
+  </div>
+  <div class="slide-body two-col">
+    <div class="col">
+      <div class="card" style="text-align:center; padding: 10px;">
+        <h3>Weblog.java — Key Metrics</h3>
+        <div style="height: 200px;"><canvas id="weblogBeforeAfter"></canvas></div>
+      </div>
+      <div class="card">
+        <h3>Before / After Bars</h3>
+        <div style="margin-top: 4px;">
+          <div class="bar-compare"><span class="bar-label">CBO</span><div class="bar-track"><div class="bar-fill before" style="width:100%">27</div></div><div class="bar-track"><div class="bar-fill after" style="width:81.5%">22 (-18.5%)</div></div></div>
+          <div class="bar-compare"><span class="bar-label">WMC</span><div class="bar-track"><div class="bar-fill before" style="width:100%">149</div></div><div class="bar-track"><div class="bar-fill after" style="width:85.9%">128 (-14.1%)</div></div></div>
+          <div class="bar-compare"><span class="bar-label">LOC</span><div class="bar-track"><div class="bar-fill before" style="width:100%">579</div></div><div class="bar-track"><div class="bar-fill after" style="width:85.1%">493 (-14.9%)</div></div></div>
+          <div class="bar-compare"><span class="bar-label">RFC</span><div class="bar-track"><div class="bar-fill before" style="width:100%">110</div></div><div class="bar-track"><div class="bar-fill after" style="width:78.2%">86 (-21.8%)</div></div></div>
+          <p style="font-size:0.6em; color:#556; margin-top:3px; text-align:center;"><span style="color:#ff6b6b;">&#9632;</span> Before &nbsp;&nbsp; <span style="color:#4ecdc4;">&#9632;</span> After</p>
+        </div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="card" style="text-align:center; padding: 10px;">
+        <h3>% Reduction Across Smells</h3>
+        <div style="height: 200px;"><canvas id="smellImpactChart"></canvas></div>
+      </div>
+      <div class="card">
+        <h3>Key Trade-offs</h3>
+        <ul>
+          <li><span class="pill green">&#8595; 18.5%</span> Coupling (CBO 27&#8594;22)</li>
+          <li><span class="pill green">&#8595; 70%</span> Interface deps (20&#8594;6 methods)</li>
+          <li><span class="pill green">&#8595; 35%</span> Inheritance depth (Template DIT)</li>
+          <li><span class="pill green">&#8595; 27%</span> CC in RollerUserDetailsService (11&#8594;8)</li>
+          <li><span class="pill green">&#8595; 25.8%</span> Method invocations (124&#8594;92)</li>
+          <li><span class="pill yellow">&#8593; 14%</span> Total LOC (+411 net for better separation)</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== SLIDE 8: LLM PIPELINE (TASK 3C) ========== -->
+<div class="slide content-slide" id="slide-8">
+  <div class="slide-header">
+    <span class="slide-tag">Task 3C</span>
+    <h2>Automated LLM Refactoring Pipeline</h2>
+  </div>
+  <div class="slide-body">
+    <p style="color:#556; font-size:0.75em; margin-bottom: 8px;">Documented as proof-of-concept &nbsp;|&nbsp; Not applied to main codebase</p>
+    <div class="pipeline" style="margin-bottom: 14px;">
+      <div class="pipe-step"><div class="icon">&#128269;</div><div class="label">Detect Smells</div><div class="desc">Confidence scoring</div></div>
+      <span class="pipe-arrow">&#8594;</span>
+      <div class="pipe-step"><div class="icon">&#129302;</div><div class="label">LLM Refactor</div><div class="desc">Gemini API diffs</div></div>
+      <span class="pipe-arrow">&#8594;</span>
+      <div class="pipe-step"><div class="icon">&#128256;</div><div class="label">Branch &amp; Commit</div><div class="desc">Git subprocess</div></div>
+      <span class="pipe-arrow">&#8594;</span>
+      <div class="pipe-step"><div class="icon">&#128203;</div><div class="label">PR Generation</div><div class="desc">GitHub API</div></div>
+      <span class="pipe-arrow">&#8594;</span>
+      <div class="pipe-step"><div class="icon">&#128065;</div><div class="label">Human Review</div><div class="desc">Manual gate</div></div>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <h3>Pipeline Results</h3>
+        <table>
+          <tr><td><strong>Files Analyzed</strong></td><td>2 (MediaFile.java, GlobalPermission.java)</td></tr>
+          <tr><td><strong>Smells Detected</strong></td><td>3 (Deficient Encapsulation &#215;2, Insufficient Modularization &#215;1)</td></tr>
+          <tr><td><strong>Avg Confidence</strong></td><td>91.7%</td></tr>
+          <tr><td><strong>Build Status</strong></td><td><span class="pill red">NOT SUCCESSFUL</span></td></tr>
+          <tr><td><strong>Model</strong></td><td>Gemini API</td></tr>
+        </table>
+      </div>
+      <div class="card">
+        <h3>Challenges &amp; Insights</h3>
+        <ul>
+          <li><span class="pill red">Build Fail</span> LLM-generated code missing cross-file context</li>
+          <li><span class="pill yellow">Insight</span> Token limits require file chunking strategy</li>
+          <li><span class="pill green">Success</span> Detect &#8594; refactor &#8594; PR pipeline is viable</li>
+          <li><span class="pill blue">Security</span> API keys via env vars, chmod 600, excluded from VCS</li>
+          <li>Human-in-the-loop review gate is <strong>essential</strong></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== SLIDE 9: AGENTIC (TASK 4) ========== -->
+<div class="slide content-slide" id="slide-9">
+  <div class="slide-header">
+    <span class="slide-tag">Task 4</span>
+    <h2>Agentic Refactoring &mdash; Copilot (Claude 3.5)</h2>
+  </div>
+  <div class="slide-body two-col">
+    <div class="col">
+      <div class="card" style="text-align: center; padding: 10px;">
+        <h3>Smells Found per File (22 total)</h3>
+        <div style="height: 190px;"><canvas id="agenticSmellChart"></canvas></div>
+      </div>
+      <div class="card">
+        <h3>Proposed: 10 New Classes</h3>
+        <div style="display:flex; flex-wrap:wrap; gap: 4px; margin-top: 4px;">
+          <span class="pill blue">SearchResultConverter</span>
+          <span class="pill blue">AnalyzerFactory</span>
+          <span class="pill blue">WeblogEntryRenderer</span>
+          <span class="pill blue">CommentPolicyEvaluator</span>
+          <span class="pill blue">SearchCriteria VO</span>
+          <span class="pill blue">LuceneQueryBuilder</span>
+          <span class="pill blue">UserValidator</span>
+          <span class="pill blue">PasswordEncoderProvider</span>
+          <span class="pill blue">IndexWriteOps</span>
+          <span class="pill blue">SearchFieldConfig</span>
+        </div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="card">
+        <h3>Files Analyzed</h3>
+        <table>
+          <tr><th>File</th><th>LOC</th><th>Smells</th><th>Key Issues</th></tr>
+          <tr><td><strong>WeblogEntry</strong></td><td>1031</td><td>6</td><td>God Class, Feature Envy</td></tr>
+          <tr><td><strong>LuceneIndexMgr</strong></td><td>486</td><td>5</td><td>God Class, Long Method</td></tr>
+          <tr><td><strong>User</strong></td><td>237</td><td>6</td><td>Tight Coupling, Duplicate</td></tr>
+          <tr><td><strong>SearchOperation</strong></td><td>220</td><td>5</td><td>Primitive Obsession</td></tr>
+        </table>
+      </div>
+      <div class="card">
+        <h3>Agentic Strengths &amp; Limitations</h3>
+        <ul>
+          <li><span class="pill green">Comprehensive</span> Systematic coverage, no smell missed</li>
+          <li><span class="pill green">Consistent</span> Uniform format, severity ratings</li>
+          <li><span class="pill green">Practical</span> Compilable before/after snippets</li>
+          <li><span class="pill red">Over-engineers</span> Event-driven arch for simple cycle break</li>
+          <li><span class="pill red">Context Window</span> Can't see full project dependency graph</li>
+          <li><span class="pill red">No Runtime</span> Can't verify behavioral equivalence</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== SLIDE 10: COMPARATIVE (TASK 5) ========== -->
+<div class="slide content-slide" id="slide-10">
+  <div class="slide-header">
+    <span class="slide-tag">Task 5</span>
+    <h2>Comparative: Manual vs LLM vs Agentic</h2>
+  </div>
+  <div class="slide-body two-col">
+    <div class="col">
+      <div class="card" style="text-align:center; padding: 10px;">
+        <h3>Quality Radar (5 Dimensions)</h3>
+        <div style="height: 220px;"><canvas id="radarChart"></canvas></div>
+      </div>
+      <div class="grid-3" style="margin-top: 4px;">
+        <div class="mini-card" style="border-top: 3px solid #4ecdc4;">
+          <h4 style="color:#4ecdc4;">Human Wins</h4>
+          <p>Arch coherence, pragmatic simplicity, behavior preservation</p>
+        </div>
+        <div class="mini-card" style="border-top: 3px solid #4facfe;">
+          <h4>Tools Win</h4>
+          <p>Rapid discovery, completeness, documentation, boilerplate</p>
+        </div>
+        <div class="mini-card" style="border-top: 3px solid #ff6b6b;">
+          <h4 style="color:#ff6b6b;">Tools Fail</h4>
+          <p>Context sensitivity, over-optimization, subtle behavior changes</p>
+        </div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="card">
+        <h3>Scorecard</h3>
+        <table>
+          <tr><th>Dimension</th><th>Manual</th><th>LLM</th><th>Agentic</th></tr>
+          <tr><td><strong>Clarity</strong></td><td><span class="pill green">Strong</span></td><td><span class="pill red">Weak</span></td><td><span class="pill yellow">Mixed</span></td></tr>
+          <tr><td><strong>Conciseness</strong></td><td><span class="pill green">Strong</span></td><td><span class="pill yellow">Mixed</span></td><td><span class="pill red">Weak</span></td></tr>
+          <tr><td><strong>Design Quality</strong></td><td><span class="pill green">Strong</span></td><td><span class="pill red">Weak</span></td><td><span class="pill yellow">Mixed</span></td></tr>
+          <tr><td><strong>Faithfulness</strong></td><td><span class="pill green">Strong</span></td><td><span class="pill red">Weak</span></td><td><span class="pill yellow">Mixed</span></td></tr>
+          <tr><td><strong>Architecture</strong></td><td><span class="pill green">Strong</span></td><td><span class="pill red">Weak</span></td><td><span class="pill yellow">Mixed</span></td></tr>
+        </table>
+      </div>
+      <div class="card" style="text-align: center; padding: 10px;">
+        <h3>Smell 1 CBO: Before vs After</h3>
+        <div style="height: 135px;"><canvas id="cboChart"></canvas></div>
+      </div>
+      <div class="highlight-box">
+        <p><strong>Recommendation:</strong> <strong>Hybrid workflow</strong> — LLM for rapid discovery &amp; boilerplate, human judgment for architecture, behavioral preservation, and proportional design.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== SLIDE 11: CHALLENGES & GEN AI ========== -->
+<div class="slide content-slide" id="slide-11">
+  <div class="slide-header">
+    <span class="slide-tag">Insights</span>
+    <h2>Challenges &amp; Gen AI Lessons</h2>
+  </div>
+  <div class="slide-body two-col">
+    <div class="col">
+      <div class="card">
+        <h3>Technical Challenges</h3>
+        <ul>
+          <li><strong>Codebase scale:</strong> 550+ classes, deep package hierarchy — scoping hard</li>
+          <li><strong>Behavior preservation:</strong> Refactoring without breaking 742 existing tests</li>
+          <li><strong>Backward compat:</strong> Public API changes needed deprecation + delegation</li>
+          <li><strong>Metric trade-offs:</strong> LOC &#8593; but coupling &#8595; — interpreting net impact</li>
+          <li><strong>Maven multi-module:</strong> Complex dependency graph complicates builds</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Gen AI Failures (Specific Examples)</h3>
+        <ul>
+          <li><span class="pill red">3C</span> LLM pipeline code didn't compile — missing cross-file imports</li>
+          <li><span class="pill red">T5</span> GPT-4 suggested static utility methods &#8594; violated DIP</li>
+          <li><span class="pill red">T4</span> Agent proposed event-driven arch for a simple cycle break &#8594; over-engineer</li>
+          <li><span class="pill red">T5</span> LLM merged two unrelated responsibilities in mapper class</li>
+          <li><span class="pill yellow">T4</span> Agent can't verify behavioral equivalence (no runtime)</li>
+        </ul>
+      </div>
+    </div>
+    <div class="col">
+      <div class="card" style="text-align: center; padding: 10px;">
+        <h3>Time Investment by Approach</h3>
+        <div style="height: 170px;"><canvas id="timeChart"></canvas></div>
+      </div>
+      <div class="card">
+        <h3>Tools &amp; LLMs Used</h3>
+        <div style="display:flex; flex-wrap:wrap; gap: 5px; margin-top: 4px;">
+          <span class="pill blue">SonarQube</span>
+          <span class="pill blue">Designite Java</span>
+          <span class="pill blue">Checkstyle</span>
+          <span class="pill blue">CK Metrics</span>
+          <span class="pill blue">PlantUML</span>
+          <span class="pill yellow">Claude 3.5 Sonnet</span>
+          <span class="pill yellow">GPT-4 Turbo</span>
+          <span class="pill yellow">Gemini API</span>
+          <span class="pill yellow">Cursor Agent</span>
+          <span class="pill yellow">GitHub Copilot</span>
+        </div>
+      </div>
+      <div class="highlight-box">
+        <p><strong>Key Lesson:</strong> Best results = <strong>hybrid</strong> — LLMs for speed &amp; coverage, humans for architectural judgment, proportionality, and correctness verification.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== SLIDE 12: THANK YOU ========== -->
+<div class="slide title-slide" id="slide-12">
+  <h1 style="font-size: 2em; margin-bottom: 20px;">Summary &amp; <span class="accent">Thank You</span></h1>
+  <div style="max-width: 800px; margin: 0 auto;">
+    <div class="stat-row" style="margin-bottom: 20px;">
+      <div class="stat-box"><div class="val" style="font-size:1.2em;">7/7</div><div class="lbl">Smells Resolved</div></div>
+      <div class="stat-box"><div class="val" style="font-size:1.2em; color:#4facfe;">18.5%</div><div class="lbl">Coupling &#8595;</div></div>
+      <div class="stat-box"><div class="val" style="font-size:1.2em; color:#4facfe;">14.1%</div><div class="lbl">Complexity &#8595;</div></div>
+      <div class="stat-box"><div class="val" style="font-size:1.2em; color:#4facfe;">70%</div><div class="lbl">Interface Deps &#8595;</div></div>
+      <div class="stat-box"><div class="val" style="font-size:1.2em; color:#4ecdc4;">BUILD &#10003;</div><div class="lbl">Tests Pass</div></div>
+    </div>
+    <div class="highlight-box" style="text-align:left; margin-bottom: 16px;">
+      <p><strong>Delivered:</strong> Architecture recovery (3 subsystems, UML) &#8594; 7 design smells with tool evidence &#8594; Manual refactoring (SOLID) &#8594; Quantitative before/after metrics &#8594; LLM pipeline + Agentic refactoring &#8594; 5-dimension comparative analysis</p>
+    </div>
+    <div class="stat-row" style="margin-bottom: 16px;">
+      <div class="stat-box"><div class="val" style="font-size:1em; color:#4facfe;">3</div><div class="lbl">Subsystems</div></div>
+      <div class="stat-box"><div class="val" style="font-size:1em; color:#4facfe;">6</div><div class="lbl">Metrics</div></div>
+      <div class="stat-box"><div class="val" style="font-size:1em; color:#4facfe;">11</div><div class="lbl">Files Created</div></div>
+      <div class="stat-box"><div class="val" style="font-size:1em; color:#4facfe;">5</div><div class="lbl">LLMs Tested</div></div>
+      <div class="stat-box"><div class="val" style="font-size:1em; color:#4facfe;">4</div><div class="lbl">Static Tools</div></div>
+    </div>
+  </div>
+  <div style="margin-top: 8px; color: #445; font-size: 0.92em;">
+    Team 27 &middot; CS6.401 Software Engineering &middot; Spring 2026<br>
+    <span style="font-size: 0.8em; color: #334;">Akshat &middot; Om &middot; Hardik &middot; Parv &middot; Gaurav</span>
+  </div>
+</div>
+
+<!-- Navigation -->
+<div class="slide-counter" id="counter">1 / 12</div>
+<div class="nav">
+  <button id="prevBtn" onclick="changeSlide(-1)" disabled>&#8592; Prev</button>
+  <button id="nextBtn" onclick="changeSlide(1)">Next &#8594;</button>
+</div>
+
+<script>
+  let current = 1;
+  const total = 12;
+
+  function changeSlide(dir) {
+    document.getElementById('slide-' + current).classList.remove('active');
+    current = Math.max(1, Math.min(total, current + dir));
+    document.getElementById('slide-' + current).classList.add('active');
+    document.getElementById('counter').textContent = current + ' / ' + total;
+    document.getElementById('prevBtn').disabled = (current === 1);
+    document.getElementById('nextBtn').disabled = (current === total);
+    document.getElementById('progressBar').style.width = ((current / total) * 100) + '%';
+    initCharts();
+  }
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); changeSlide(1); }
+    if (e.key === 'ArrowLeft' || e.key === 'Backspace') { e.preventDefault(); changeSlide(-1); }
+  });
+
+  // ===== CHART.JS CONFIG =====
+  Chart.defaults.color = '#889';
+  Chart.defaults.borderColor = '#1e1e2e';
+  Chart.defaults.font.family = 'Inter';
+  Chart.defaults.font.size = 11;
+
+  let charts = {};
+
+  function initCharts() {
+    // Subsystem chart (Slide 3)
+    if (current === 3 && !charts.subsystem) {
+      charts.subsystem = new Chart(document.getElementById('subsystemChart'), {
+        type: 'bar',
+        data: {
+          labels: ['Weblog &\nContent', 'User &\nRoles', 'Search &\nIndexing'],
+          datasets: [{
+            label: 'Key Classes',
+            data: [12, 8, 6],
+            backgroundColor: ['#4facfe', '#4ecdc4', '#ffd93d'],
+            borderRadius: 4,
+            barThickness: 30
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          scales: { x: { grid: { display: false } }, y: { beginAtZero: true, grid: { color: '#151520' } } },
+          plugins: { legend: { display: false } }
+        }
+      });
+    }
+
+    // Smell Severity (Slide 4)
+    if (current === 4 && !charts.smellSev) {
+      charts.smellSev = new Chart(document.getElementById('smellSeverityChart'), {
+        type: 'doughnut',
+        data: {
+          labels: ['Critical (2)', 'High (1)', 'Moderate (3)', 'Low (1)'],
+          datasets: [{ data: [2, 1, 3, 1], backgroundColor: ['#ff6b6b', '#ffa06b', '#ffd93d', '#4facfe'], borderWidth: 0 }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, padding: 6, font: { size: 10 } } } }
+        }
+      });
+    }
+
+    // CC, Fan-Out, WMC (Slide 5)
+    if (current === 5 && !charts.cc) {
+      charts.cc = new Chart(document.getElementById('ccChart'), {
+        type: 'bar',
+        data: {
+          labels: ['PageServlet\ndoGet', 'MailUtil\nnotify', 'HTMLSanitizer', 'DatabaseInstaller\nupgrade'],
+          datasets: [
+            { label: 'CC', data: [83, 54, 48, 45], backgroundColor: ['#ff6b6b', '#ff8a6b', '#ffa86b', '#ffc66b'], borderRadius: 4, barThickness: 24 },
+            { label: 'Threshold', data: [10, 10, 10, 10], backgroundColor: '#1e2e3e', borderRadius: 4, barThickness: 24 }
+          ]
+        },
+        options: {
+          indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+          scales: { x: { grid: { color: '#151520' } }, y: { grid: { display: false } } },
+          plugins: { legend: { display: true, labels: { boxWidth: 10, font: { size: 9 } } } }
+        }
+      });
+      charts.fanout = new Chart(document.getElementById('fanoutChart'), {
+        type: 'bar',
+        data: {
+          labels: ['LuceneIdx', 'JPAMedia', 'JPAWeblog', 'ThemeMgr', 'RollerCtx', 'CommentSrv'],
+          datasets: [{ label: 'Fan-Out', data: [40, 34, 34, 33, 30, 28], backgroundColor: '#4facfe', borderRadius: 4, barThickness: 16 }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          scales: { x: { grid: { display: false } }, y: { beginAtZero: true, grid: { color: '#151520' } } },
+          plugins: { legend: { display: false } }
+        }
+      });
+      charts.wmc = new Chart(document.getElementById('wmcChart'), {
+        type: 'bar',
+        data: {
+          labels: ['JPAMedia\nFileImpl', 'DateUtil', 'MultiWeblog\nURL', 'WeblogEntry\nMgr', 'Weblogger\nImpl', 'UserMgr'],
+          datasets: [{ label: 'WMC', data: [88, 69, 58, 43, 31, 31], backgroundColor: ['#ff6b6b', '#ff8a6b', '#ffa86b', '#ffc66b', '#ffd93d', '#4ecdc4'], borderRadius: 4, barThickness: 16 }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          scales: { x: { grid: { display: false } }, y: { beginAtZero: true, grid: { color: '#151520' } } },
+          plugins: { legend: { display: false } }
+        }
+      });
+    }
+
+    // Before/After (Slide 7)
+    if (current === 7 && !charts.weblog) {
+      charts.weblog = new Chart(document.getElementById('weblogBeforeAfter'), {
+        type: 'bar',
+        data: {
+          labels: ['CBO', 'WMC', 'LOC', 'RFC', 'Methods', 'Comparisons'],
+          datasets: [
+            { label: 'Before', data: [27, 149, 579, 110, 97, 15], backgroundColor: '#ff6b6b', borderRadius: 4, barThickness: 14 },
+            { label: 'After', data: [22, 128, 493, 86, 95, 9], backgroundColor: '#4ecdc4', borderRadius: 4, barThickness: 14 }
+          ]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          scales: { x: { grid: { display: false } }, y: { beginAtZero: true, grid: { color: '#151520' } } },
+          plugins: { legend: { labels: { boxWidth: 10 } } }
+        }
+      });
+      charts.smellImpact = new Chart(document.getElementById('smellImpactChart'), {
+        type: 'bar',
+        data: {
+          labels: ['Coupling\n(CBO)', 'Complexity\n(WMC)', 'Size\n(LOC)', 'Interface\nDeps', 'Inheritance\n(DIT)', 'CC\n(UserDet)'],
+          datasets: [{
+            label: '% Reduction',
+            data: [18.5, 14.1, 14.9, 70, 35, 27],
+            backgroundColor: ['#4ecdc4', '#4ecdc4', '#4ecdc4', '#4facfe', '#4facfe', '#4facfe'],
+            borderRadius: 4, barThickness: 16
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          scales: { x: { grid: { display: false } }, y: { beginAtZero: true, max: 80, grid: { color: '#151520' }, ticks: { callback: function(v) { return v + '%'; } } } },
+          plugins: { legend: { display: false } }
+        }
+      });
+    }
+
+    // Agentic (Slide 9)
+    if (current === 9 && !charts.agentic) {
+      charts.agentic = new Chart(document.getElementById('agenticSmellChart'), {
+        type: 'bar',
+        data: {
+          labels: ['LuceneIndex\nManager', 'WeblogEntry', 'Search\nOperation', 'User'],
+          datasets: [
+            { label: 'Structural', data: [2, 2, 1, 0], backgroundColor: '#ff6b6b', borderRadius: 4 },
+            { label: 'OOP', data: [1, 1, 1, 1], backgroundColor: '#ffd93d', borderRadius: 4 },
+            { label: 'Code Quality', data: [2, 3, 3, 5], backgroundColor: '#4facfe', borderRadius: 4 }
+          ]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true, beginAtZero: true, grid: { color: '#151520' } } },
+          plugins: { legend: { labels: { boxWidth: 10, font: { size: 9 } } } }
+        }
+      });
+    }
+
+    // Radar + CBO (Slide 10)
+    if (current === 10 && !charts.radar) {
+      charts.radar = new Chart(document.getElementById('radarChart'), {
+        type: 'radar',
+        data: {
+          labels: ['Clarity', 'Conciseness', 'Design Quality', 'Faithfulness', 'Architecture'],
+          datasets: [
+            { label: 'Manual', data: [9, 8, 9, 9, 9], borderColor: '#4ecdc4', backgroundColor: 'rgba(78,205,196,0.15)', borderWidth: 2, pointRadius: 3 },
+            { label: 'LLM', data: [4, 7, 4, 4, 3], borderColor: '#ff6b6b', backgroundColor: 'rgba(255,107,107,0.1)', borderWidth: 2, pointRadius: 3 },
+            { label: 'Agentic', data: [6, 5, 7, 6, 6], borderColor: '#4facfe', backgroundColor: 'rgba(79,172,254,0.1)', borderWidth: 2, pointRadius: 3 }
+          ]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          scales: { r: { beginAtZero: true, max: 10, ticks: { stepSize: 2, font: { size: 9 }, backdropColor: 'transparent' }, grid: { color: '#1e1e2e' }, pointLabels: { font: { size: 10 } } } },
+          plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } } }
+        }
+      });
+      charts.cbo = new Chart(document.getElementById('cboChart'), {
+        type: 'bar',
+        data: {
+          labels: ['Manual', 'LLM (GPT-4)', 'Agentic (Cursor)'],
+          datasets: [
+            { label: 'Before', data: [8, 8, 8], backgroundColor: '#ff6b6b', borderRadius: 4, barThickness: 20 },
+            { label: 'After', data: [3, 5, 4], backgroundColor: '#4ecdc4', borderRadius: 4, barThickness: 20 }
+          ]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          scales: { x: { grid: { display: false } }, y: { beginAtZero: true, grid: { color: '#151520' } } },
+          plugins: { legend: { labels: { boxWidth: 10, font: { size: 9 } } } }
+        }
+      });
+    }
+
+    // Time (Slide 11)
+    if (current === 11 && !charts.time) {
+      charts.time = new Chart(document.getElementById('timeChart'), {
+        type: 'bar',
+        data: {
+          labels: ['Manual\nAnalysis', 'LLM\nAnalysis', 'Manual\nRefactor', 'Pipeline\nSetup', 'Agentic\nAnalysis'],
+          datasets: [{
+            label: 'Hours',
+            data: [8, 0.5, 12, 4, 1.5],
+            backgroundColor: ['#4ecdc4', '#ff6b6b', '#4ecdc4', '#ffd93d', '#4facfe'],
+            borderRadius: 4, barThickness: 20
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          scales: { x: { grid: { display: false } }, y: { beginAtZero: true, grid: { color: '#151520' }, ticks: { callback: function(v) { return v + 'h'; } } } },
+          plugins: { legend: { display: false } }
+        }
+      });
+    }
+  }
+
+  // Initialize charts for first visible slide
+  setTimeout(initCharts, 300);
+</script>
+</body>
+</html>
