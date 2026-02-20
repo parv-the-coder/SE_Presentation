@@ -166,7 +166,7 @@
         <ul>
           <li>3 subsystem-level <strong>class diagrams</strong> in PlantUML</li>
           <li>Package-grouped, color-coded: inheritance, composition, association, dependency</li>
-          <li>Cross-validated every relationship against source code</li>
+          <li>Created every relationship against source code</li>
           <li>Documented key design patterns: Manager/POJO, Guice DI, ReadWriteLock, Wrapper</li>
         </ul>
       </div>
@@ -187,7 +187,6 @@
         <h3 style="color: #4ecdc4;">Manual vs LLM Architecture Analysis</h3>
         <table>
           <tr><th></th><th>Manual</th><th>LLM (Claude 3.5)</th></tr>
-          <tr><td><strong>Time</strong></td><td>~8 hours</td><td>~30 minutes</td></tr>
           <tr><td><strong>Depth</strong></td><td>Found edge cases, subtle cycles, implementation quirks</td><td>Quick high-level structure, known pattern templates</td></tr>
           <tr><td><strong>Best at</strong></td><td>Deep understanding &amp; validation</td><td>Discovery &amp; initial mapping</td></tr>
         </table>
@@ -286,11 +285,8 @@
         <table>
           <tr><th>Metric</th><th>Worst Violator</th><th>Value / Threshold</th></tr>
           <tr><td><strong>CC</strong></td><td>PageServlet.doGet</td><td>83 / 10</td></tr>
-          <tr><td><strong>Method LOC</strong></td><td>DatabaseInstaller</td><td>438 / 150</td></tr>
           <tr><td><strong>Fan-Out</strong></td><td>LuceneIndexManager</td><td>40 / 25</td></tr>
           <tr><td><strong>WMC</strong></td><td>JPAMediaFileManagerImpl</td><td>88 / 50</td></tr>
-          <tr><td><strong>DIT</strong></td><td>PreviewURLStrategy</td><td>3 / 3</td></tr>
-          <tr><td><strong>LCOM</strong></td><td>SubscriptionEntry</td><td>0.425</td></tr>
         </table>
       </div>
     </div>
@@ -306,7 +302,7 @@
   <div class="slide-body">
     <table style="font-size: 0.9em; margin-bottom: 8px;">
       <thead>
-        <tr><th style="width:150px;">Smell</th><th>Refactoring Applied</th><th style="width:90px;">SOLID</th><th style="width:150px;">Impact</th></tr>
+        <tr><th style="width:150px;">Smell</th><th>Refactoring Applied</th><th style="width:150px;">SOLID</th><th style="width:250px;">Impact</th></tr>
       </thead>
       <tbody>
         <tr><td><strong>1. Cyclic Deps</strong></td><td>Extracted AuthorizationService (interface + impl)</td><td>SRP, DIP</td><td>11 files (2 new, 9 mod)</td></tr>
@@ -324,6 +320,10 @@
       <div class="stat-box"><div class="val" style="color:#4facfe;">+647</div><div class="lbl">LOC Added</div></div>
       <div class="stat-box"><div class="val" style="color:#ff6b6b;">-236</div><div class="lbl">LOC Removed</div></div>
       <div class="stat-box"><div class="val" style="color:#4ecdc4;">BUILD &#10003;</div><div class="lbl">mvn install passed</div></div>
+    </div>
+    <div class="highlight-box" style="margin-bottom: 6px;">
+      <p style="margin-bottom: 4px;"><strong>SOLID:</strong></p>
+      <p><strong style="color:#4facfe;">S</strong> — Single Responsibility Principle &nbsp;|&nbsp; <strong style="color:#4facfe;">O</strong> — Open/Closed Principle &nbsp;|&nbsp; <strong style="color:#4facfe;">L</strong> — Liskov Substitution Principle &nbsp;|&nbsp; <strong style="color:#4facfe;">I</strong> — Interface Segregation Principle &nbsp;|&nbsp; <strong style="color:#4facfe;">D</strong> — Dependency Inversion Principle</p>
     </div>
     <div class="highlight-box">
       <p><strong>Workflow:</strong> GitHub Issue → Analysis → Class-level refactoring → Backward compatibility via delegation → mvn compile &amp; test → Commit with traceability</p>
@@ -669,8 +669,8 @@
       charts.smellSev = new Chart(document.getElementById('smellSeverityChart'), {
         type: 'doughnut',
         data: {
-          labels: ['Critical (2)', 'High (1)', 'Moderate (3)', 'Low (1)'],
-          datasets: [{ data: [2, 1, 3, 1], backgroundColor: ['#ff6b6b', '#ffa06b', '#ffd93d', '#4facfe'], borderWidth: 0 }]
+          labels: ['Critical (2)', 'Moderate (3)', 'Low (2)'],
+          datasets: [{ data: [2, 3, 2], backgroundColor: ['#ff6b6b', '#ffd93d', '#4facfe'], borderWidth: 0 }]
         },
         options: {
           responsive: true, maintainAspectRatio: false,
